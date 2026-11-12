@@ -6,7 +6,7 @@ ONI mod（Census シリーズ。兄弟は `../CritterCensus`）。Build: `dotnet
 - `Ui/CensusScreen.cs` の列は `ColumnX` と `*Column` 定数で決まる。列を足すときは、`ColumnNames`、`SortKey` / `TextKey`、`AddRow` を合わせる。
 - 植物の一覧は `Components.Uprootables` から取り、`GameTags.Plant` で絞る。成長は `IManageGrowingStates`（作物は `Growing` コンポーネント、木の枝はステートマシン）から読む。
 - 木は幹を 1 行にし、枝（`PlantBranch.Instance`、幹は `PlantBranchGrower.Instance`）を `PlantRow.Children` に入れる。幹の行の値は `PlantCollector.Summarize` が枝から補う。画面側の件数・絞り込み・並べ替えは幹の行が単位。
-- ツールボタンのアイコンは `Ui/ToolIcon.cs`。`ModAssets/tool_icon.png` を読み、`Assets.Sprites` に自分の名前で登録する。ファイルがなければバニラのアイコン名を返す。`CritterCensus` にも同じものがある。
+- ツールボタンのアイコンは `Ui/ToolIcon.cs`。`ModAssets/tool_icon.png` を読み、`Assets.Sprites` に自分の名前で登録する。ファイルがなければバニラのアイコン名を返す。`CritterCensus` にも同じものがある。元画像は HQ の `_Incoming/PlantCensus/2026-11-13-icon-tool-3/`、加工は `tools/asset.py`。
 - 「問題」列は `WiltCondition.WiltCausesString()` の各行。ゲームが植物の状態欄に出す文言そのまま（行頭の記号とリンクのマークアップは取り除く）。
 - ゲームの文字列クラス `STRINGS` は、この Mod の `STRINGS` に隠れる。ゲーム側を使うときは `global::STRINGS`。
 - `CritterCensus` と同じ対象（`GameInputMapping.CompareActionKeyCodes`、`GameUtil.GetHotkeyString`、`SelectTool.OnLeftClickDown`）にパッチを当てている。両方を入れても動くように、どちらも自分の条件に合わないときは元の処理へ通す。
