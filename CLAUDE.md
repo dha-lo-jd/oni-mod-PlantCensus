@@ -9,7 +9,7 @@ ONI mod（Census シリーズ。兄弟は `../CritterCensus`）。Build: `dotnet
 - ツールボタンのアイコンは `Ui/ToolIcon.cs`。`ModAssets/tool_icon.png` を読み、`Assets.Sprites` に自分の名前で登録する。ファイルがなければバニラのアイコン名を返す。`CritterCensus` にも同じものがある。元画像は HQ の `_Incoming/PlantCensus/2026-11-13-icon-tool-3/`、加工は `tools/asset.py`。
 - 「問題」列は `WiltCondition.WiltCausesString()` の各行。ゲームが植物の状態欄に出す文言そのまま（行頭の記号とリンクのマークアップは取り除く）。
 - ゲームの文字列クラス `STRINGS` は、この Mod の `STRINGS` に隠れる。ゲーム側を使うときは `global::STRINGS`。
-- `CritterCensus` と同じ対象（`GameInputMapping.CompareActionKeyCodes`、`GameUtil.GetHotkeyString`、`SelectTool.OnLeftClickDown`）にパッチを当てている。両方を入れても動くように、どちらも自分の条件に合わないときは元の処理へ通す。
+- `CritterCensus` と同じ対象（`GameInputMapping.CompareActionKeyCodes`、`GameUtil.GetHotkeyString`、`SelectTool.OnLeftClickDown`）にパッチを当てている。両方を入れても動くように、どちらも自分の条件に合わないときは元の処理へ通す。両方を有効にしたハーネス実行（両方のタグ、17 件）は 2026-11-13 に合格済み。ただしツールのドラッグやクリックの実操作は見ていない。
 
 ## 実機検証
 ONI 実機で検証するには Gravitas.TestHarness を使う。テストは `[HarnessTest]` を付けた static メソッドとして書く（`PlantCensus/HarnessTests.cs`、`#if DEBUG`）。
