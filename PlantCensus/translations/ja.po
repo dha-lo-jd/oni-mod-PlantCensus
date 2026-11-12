@@ -1,0 +1,113 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PO Editor\n"
+"Application: Oxygen Not IncludedPOT Version: 2.0\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+
+msgctxt "PlantCensus.STRINGS.UI.TOOL_NAME"
+msgid "Plant Census"
+msgstr "植物調査"
+
+msgctxt "PlantCensus.STRINGS.UI.TOOL_TOOLTIP"
+msgid "Drag to list the plants in an area"
+msgstr "ドラッグした範囲内の植物を一覧表示します"
+
+msgctxt "PlantCensus.STRINGS.UI.TITLE"
+msgid "Plant Census"
+msgstr "植物調査"
+
+msgctxt "PlantCensus.STRINGS.UI.EMPTY"
+msgid "No plants in the selected area."
+msgstr "選択範囲内に植物がありません。"
+
+msgctxt "PlantCensus.STRINGS.UI.FILTERS.STATE"
+msgid "State"
+msgstr "状態"
+
+msgctxt "PlantCensus.STRINGS.UI.FILTERS.SPECIES"
+msgid "Species"
+msgstr "種"
+
+msgctxt "PlantCensus.STRINGS.UI.FILTERS.ALL"
+msgid "All"
+msgstr "すべて"
+
+msgctxt "PlantCensus.STRINGS.UI.STATES.READY"
+msgid "Ready"
+msgstr "収穫可"
+
+msgctxt "PlantCensus.STRINGS.UI.STATES.GROWING"
+msgid "Growing"
+msgstr "成長中"
+
+msgctxt "PlantCensus.STRINGS.UI.STATES.STALLED"
+msgid "Stalled"
+msgstr "停滞"
+
+msgctxt "PlantCensus.STRINGS.UI.STATES.IDLE"
+msgid "No growth"
+msgstr "対象外"
+
+msgctxt "PlantCensus.STRINGS.UI.ORIGINS.WILD"
+msgid "Wild"
+msgstr "野生"
+
+msgctxt "PlantCensus.STRINGS.UI.ORIGINS.FARMED"
+msgid "Farmed"
+msgstr "栽培"
+
+msgctxt "PlantCensus.STRINGS.UI.HARVEST.AUTO"
+msgid "Auto"
+msgstr "自動"
+
+msgctxt "PlantCensus.STRINGS.UI.HARVEST.MANUAL"
+msgid "Manual"
+msgstr "手動"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.STATE"
+msgid "State"
+msgstr "状態"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.PLANT"
+msgid "Plant"
+msgstr "植物"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.ORIGIN"
+msgid "Origin"
+msgstr "野生/栽培"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.GROWTH"
+msgid "Growth"
+msgstr "成長"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.YIELD"
+msgid "Yield"
+msgstr "収量"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.HARVEST"
+msgid "Harvest"
+msgstr "収穫"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.TEMPERATURE"
+msgid "Temperature"
+msgstr "温度"
+
+msgctxt "PlantCensus.STRINGS.UI.COLUMNS.PROBLEMS"
+msgid "Problems"
+msgstr "問題"
+
+msgctxt "PlantCensus.STRINGS.UI.FORMATS.CYCLES"
+msgid "{0}cyc"
+msgstr "{0}サイクル"
+
+msgctxt "PlantCensus.STRINGS.UI.FORMATS.LEFT"
+msgid "({0} left)"
+msgstr "(残り{0})"
