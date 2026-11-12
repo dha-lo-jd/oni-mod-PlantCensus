@@ -111,3 +111,23 @@ msgstr "{0}サイクル"
 msgctxt "PlantCensus.STRINGS.UI.FORMATS.LEFT"
 msgid "({0} left)"
 msgstr "(残り{0})"
+
+msgctxt "PlantCensus.STRINGS.UI.FORMATS.BRANCHES"
+msgid "{0} branches ({1} ready)"
+msgstr "枝 {0} (収穫可 {1})"
+
+msgctxt "PlantCensus.STRINGS.UI.FORMATS.AVERAGE"
+msgid "avg {0}"
+msgstr "平均 {0}"
+
+msgctxt "PlantCensus.STRINGS.UI.FORMATS.PER_BRANCH"
+msgid "{0} x{1}"
+msgstr "{0} ×{1}"
+
+msgctxt "PlantCensus.STRINGS.UI.TOOLTIPS.EXPAND"
+msgid "Show the branches"
+msgstr "枝を表示"
+
+msgctxt "PlantCensus.STRINGS.UI.TOOLTIPS.COLLAPSE"
+msgid "Hide the branches"
+msgstr "枝を隠す"

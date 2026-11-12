@@ -7,7 +7,8 @@ using UnityEngine.UI;
 namespace PlantCensus;
 
 // Full-screen modal listing the plants found in the selected area, laid out like the skills screen: filters
-// in the left pane, the list in the right pane. The list is a snapshot taken when the screen opens; filters only narrow
+// in the left pane, the list in the right pane. A tree is one row; its branches are rows under it that the button in
+// front of its name shows and hides. The list is a snapshot taken when the screen opens; filters only narrow
 // what is shown. It has its own root canvas set up like the skills screen's.
 public sealed class CensusScreen : KModalScreen
 {
@@ -34,6 +35,12 @@ public sealed class CensusScreen : KModalScreen
     private static readonly Color WildTextColor = new Color(0.85f, 0.6f, 0.8f, 1f);
     private static readonly Color WildRowColor = new Color(0.36f, 0.26f, 0.34f, 1f);
     private static readonly Color RowOn = new Color(0.33f, 0.36f, 0.46f, 1f);
+    private static readonly Color BranchRowColor = new Color(0.2f, 0.215f, 0.28f, 1f);
+    private static readonly Color WildBranchRowColor = new Color(0.29f, 0.21f, 0.275f, 1f);
+
+    // Room in front of the icon for the show/hide button of a tree, and how far its branches are indented.
+    private const float ExpanderSize = 20f;
+    private const float BranchIndent = 28f;
     private const int StateColumn = 0;
     private const int PlantColumn = 1;
     private const int OriginColumn = 2;
@@ -57,6 +64,8 @@ public sealed class CensusScreen : KModalScreen
     internal static CensusScreen Current => current;
     internal int TotalRows => rows.Count;
     internal int ShownRows { get; private set; }
+    internal int ShownBranches { get; private set; }
+    internal PlantRow Row(int index) => rows[index];
 
     private sealed class ToggleView
     {
@@ -89,6 +98,7 @@ public sealed class CensusScreen : KModalScreen
     private List<PlantRow> rows;
     private readonly HashSet<PlantState> states = new HashSet<PlantState>(AllStates);
     private readonly HashSet<string> species = new HashSet<string>();
+    private readonly HashSet<PlantRow> expanded = new HashSet<PlantRow>();
     private readonly Dictionary<PlantState, ToggleView> stateToggles = new Dictionary<PlantState, ToggleView>();
     private readonly Dictionary<string, ToggleView> speciesToggles = new Dictionary<string, ToggleView>();
     private ToggleView allToggle;
@@ -337,6 +347,17 @@ public sealed class CensusScreen : KModalScreen
         Refresh();
     }
 
+    // Shows or hides the branches of a tree.
+    internal void ToggleExpanded(PlantRow row)
+    {
+        if (!expanded.Remove(row))
+        {
+            expanded.Add(row);
+        }
+
+        Refresh();
+    }
+
     private static ScrollRect ConfigureScroll(RectTransform viewport, RectTransform content)
     {
         var scroll = viewport.gameObject.AddComponent<ScrollRect>();
@@ -582,6 +603,7 @@ public sealed class CensusScreen : KModalScreen
 
         var shown = Sorted(Filter(rows, states, species), sortColumn, sortDescending);
         ShownRows = shown.Count;
+        ShownBranches = 0;
         countLabel.text = shown.Count + " / " + rows.Count;
         if (rows.Count == 0)
         {
@@ -591,11 +613,24 @@ public sealed class CensusScreen : KModalScreen
         foreach (var row in shown)
         {
             AddRow(row);
+            if (!expanded.Contains(row))
+            {
+                continue;
+            }
+
+            // Branches follow their trunk, in the same order as the list, and obey the state filter themselves.
+            foreach (var branch in Sorted(row.Children.Where(c => states.Contains(c.State)).ToList(), sortColumn, sortDescending))
+            {
+                AddRow(branch);
+                ShownBranches++;
+            }
         }
     }
 
+    // A tree passes the state filter with its own (summed up) state or with any of its branches.
     internal static List<PlantRow> Filter(List<PlantRow> rows, HashSet<PlantState> states, HashSet<string> species) =>
-        rows.Where(r => states.Contains(r.State) && (species.Count == 0 || species.Contains(r.SpeciesKey))).ToList();
+        rows.Where(r => (states.Contains(r.State) || r.Children.Any(c => states.Contains(c.State)))
+            && (species.Count == 0 || species.Contains(r.SpeciesKey))).ToList();
 
     private void AddMessageRow(string text)
     {
@@ -608,31 +643,70 @@ public sealed class CensusScreen : KModalScreen
     {
         var button = UiFactory.CreateButton(content, "", 0f, 0f, 0f, RowHeight, () => Pick(row));
         button.gameObject.AddComponent<LayoutElement>().minHeight = RowHeight;
-        if (row.IsWild)
+        if (row.IsBranch)
+        {
+            button.GetComponent<Image>().color = row.IsWild ? WildBranchRowColor : BranchRowColor;
+        }
+        else if (row.IsWild)
         {
             button.GetComponent<Image>().color = WildRowColor;
         }
 
         var holder = button.GetComponent<RectTransform>();
+        var isTree = row.Children.Count > 0;
+        var nameX = ColumnX[PlantColumn] + (row.IsBranch ? BranchIndent : 0f);
+        if (isTree)
+        {
+            // Sits on top of the row button, so a click here shows or hides the branches instead of picking the tree.
+            var open = expanded.Contains(row);
+            var expander = UiFactory.CreateButton(holder, open ? "-" : "+", nameX, (RowHeight - ExpanderSize) / 2f, ExpanderSize, ExpanderSize, () => ToggleExpanded(row));
+            expander.name = "Expander";
+            expander.gameObject.AddComponent<ToolTip>().SetSimpleTooltip(open ? STRINGS.UI.TOOLTIPS.COLLAPSE : STRINGS.UI.TOOLTIPS.EXPAND);
+            nameX += ExpanderSize + 4f;
+        }
+
         if (row.Icon != null)
         {
-            var icon = UiFactory.CreatePanel("Icon", holder, row.IconColor, ColumnX[PlantColumn], (RowHeight - IconSize) / 2f, IconSize, IconSize);
+            var icon = UiFactory.CreatePanel("Icon", holder, row.IconColor, nameX, (RowHeight - IconSize) / 2f, IconSize, IconSize);
             icon.sprite = row.Icon;
             icon.preserveAspect = true;
             icon.raycastTarget = false;
         }
 
+        nameX += IconSize + 4f;
+        var name = isTree ? row.Name + "\n" + string.Format(STRINGS.UI.FORMATS.BRANCHES, row.Children.Count, row.ReadyBranches) : row.Name;
         Cell(holder, StateColumn, StateName(row.State), color: StateColor(row.State));
-        Cell(holder, PlantColumn, row.Name);
+        Cell(holder, PlantColumn, name, x: nameX);
         Cell(holder, OriginColumn, row.IsWild ? STRINGS.UI.ORIGINS.WILD : STRINGS.UI.ORIGINS.FARMED, color: row.IsWild ? WildTextColor : (Color?)null);
-        Cell(holder, GrowthColumn, ProgressText(row.Growth, row.GrowthTotalCycles, row.GrowthRemainingCycles), ratio: row.Growth);
-        Cell(holder, YieldColumn, row.CropName == null ? "-" : row.CropName + "\n" + row.CropAmount);
+        Cell(holder, GrowthColumn, GrowthText(row), ratio: row.Growth);
+        Cell(holder, YieldColumn, YieldText(row));
         Cell(holder, HarvestColumn, HarvestText(row));
         Cell(holder, TemperatureColumn, row.Temperature < 0f ? "-" : GameUtil.GetFormattedTemperature(row.Temperature), color: TemperatureColor(row.TemperatureBand));
         Cell(holder, ProblemsColumn, string.Join(", ", row.Problems), row.Problems.Length > 0 ? string.Join("\n", row.Problems) : null, color: ProblemColor);
     }
 
-    private static void Cell(RectTransform holder, int column, string text, string tooltip = null, float ratio = -1f, Color? color = null)
+    private static string GrowthText(PlantRow row)
+    {
+        if (row.GrowthIsAverage)
+        {
+            return string.Format(STRINGS.UI.FORMATS.AVERAGE, Mathf.RoundToInt(row.Growth * 100f) + "%");
+        }
+
+        return ProgressText(row.Growth, row.GrowthTotalCycles, row.GrowthRemainingCycles);
+    }
+
+    private static string YieldText(PlantRow row)
+    {
+        if (row.CropName == null)
+        {
+            return "-";
+        }
+
+        var amount = row.CropCount > 0 ? string.Format(STRINGS.UI.FORMATS.PER_BRANCH, row.CropAmount, row.CropCount) : row.CropAmount;
+        return row.CropName + "\n" + amount;
+    }
+
+    private static void Cell(RectTransform holder, int column, string text, string tooltip = null, float ratio = -1f, Color? color = null, float x = -1f)
     {
         // Progress bar behind the text (growth toward the next harvest).
         if (ratio >= 0f && column + 1 < ColumnX.Length)
@@ -645,7 +719,11 @@ public sealed class CensusScreen : KModalScreen
         }
 
         var last = column + 1 >= ColumnX.Length;
-        var x = column == PlantColumn ? ColumnX[column] + IconSize + 4f : ColumnX[column];
+        if (x < 0f)
+        {
+            x = ColumnX[column];
+        }
+
         var width = last ? 700f : ColumnX[column + 1] - x - 4f;
         // Two-line texts (growth, yield) get a taller label; the label centers its lines vertically.
         var height = text != null && text.Contains('\n') ? 40f : 20f;

@@ -4,14 +4,16 @@ using UnityEngine;
 
 namespace PlantCensus;
 
-// Finds every plant rooted in the selected cells and snapshots its growth.
+// Finds every plant rooted in the selected cells and snapshots its growth. A tree is one entry: its trunk, with the
+// branches as children. A tree counts as selected when its trunk or any of its branches is in the area.
 public static class PlantCollector
 {
     private const float SecondsPerCycle = 600f;
 
     public static List<PlantRow> Collect(CensusSelection selection)
     {
-        var rows = new List<PlantRow>();
+        var plants = new List<GameObject>();
+        var seen = new HashSet<GameObject>();
         foreach (var uprootable in Components.Uprootables.Items)
         {
             if (uprootable == null || uprootable.gameObject == null)
@@ -31,10 +33,153 @@ public static class PlantCollector
                 continue;
             }
 
-            rows.Add(BuildRow(go, prefabId));
+            // A branch stands for its tree.
+            var branch = go.GetSMI<PlantBranch.Instance>();
+            var plant = branch != null && branch.HasTrunk ? branch.trunk.gameObject : go;
+            if (plant != null && seen.Add(plant))
+            {
+                plants.Add(plant);
+            }
+        }
+
+        var rows = new List<PlantRow>();
+        foreach (var plant in plants)
+        {
+            var prefabId = plant.GetComponent<KPrefabID>();
+            if (prefabId == null)
+            {
+                continue;
+            }
+
+            var row = BuildRow(plant, prefabId);
+            AddBranches(row, plant);
+            rows.Add(row);
         }
 
         return rows;
+    }
+
+    private static void AddBranches(PlantRow row, GameObject trunk)
+    {
+        var grower = trunk.GetSMI<PlantBranchGrower.Instance>();
+        if (grower == null)
+        {
+            return;
+        }
+
+        foreach (var branch in grower.GetExistingBranches())
+        {
+            var prefabId = branch != null ? branch.GetComponent<KPrefabID>() : null;
+            if (prefabId == null)
+            {
+                continue;
+            }
+
+            // A branch belongs to its tree's species.
+            var child = BuildRow(branch, prefabId);
+            child.IsBranch = true;
+            child.SpeciesKey = row.SpeciesKey;
+            child.SpeciesName = row.SpeciesName;
+            row.Children.Add(child);
+        }
+
+        if (row.Children.Count > 0)
+        {
+            Summarize(row);
+        }
+    }
+
+    // Makes the trunk's row speak for the whole tree: what the trunk has no value of comes from the branches.
+    public static void Summarize(PlantRow row)
+    {
+        var children = row.Children;
+        row.ReadyBranches = 0;
+        var anyStalled = row.State == PlantState.Stalled;
+        var anyGrowing = row.State == PlantState.Growing;
+        foreach (var child in children)
+        {
+            if (child.State == PlantState.Ready)
+            {
+                row.ReadyBranches++;
+            }
+
+            anyStalled |= child.State == PlantState.Stalled;
+            anyGrowing |= child.State == PlantState.Growing;
+        }
+
+        row.State = row.ReadyBranches > 0 || row.State == PlantState.Ready ? PlantState.Ready
+            : anyStalled ? PlantState.Stalled
+            : anyGrowing ? PlantState.Growing
+            : PlantState.Idle;
+
+        // A full-grown trunk shows how far its branches are.
+        if (row.Growth < 0f || row.Growth >= 1f)
+        {
+            var sum = 0f;
+            var count = 0;
+            foreach (var child in children)
+            {
+                if (child.Growth >= 0f)
+                {
+                    sum += child.Growth;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                row.Growth = sum / count;
+                row.GrowthIsAverage = true;
+                row.GrowthTotalCycles = -1f;
+                row.GrowthRemainingCycles = -1f;
+            }
+        }
+
+        if (row.CropName == null)
+        {
+            foreach (var child in children)
+            {
+                if (child.CropName == null)
+                {
+                    continue;
+                }
+
+                if (row.CropName == null)
+                {
+                    row.CropName = child.CropName;
+                    row.CropAmount = child.CropAmount;
+                }
+
+                row.CropCount++;
+            }
+        }
+
+        if (!row.HasHarvestSetting)
+        {
+            foreach (var child in children)
+            {
+                if (child.HasHarvestSetting)
+                {
+                    row.HasHarvestSetting = true;
+                    row.AutoHarvest = child.AutoHarvest;
+                    break;
+                }
+            }
+        }
+
+        var problems = new List<string>(row.Problems);
+        foreach (var child in children)
+        {
+            foreach (var problem in child.Problems)
+            {
+                if (!problems.Contains(problem))
+                {
+                    problems.Add(problem);
+                }
+            }
+        }
+
+        row.Problems = problems.ToArray();
     }
 
     public static PlantRow BuildRow(GameObject go, KPrefabID prefabId)
@@ -74,7 +219,8 @@ public static class PlantCollector
         }
         else
         {
-            row.State = row.Growth >= 0f ? PlantState.Growing : PlantState.Idle;
+            // A plant that is full-grown but has nothing to harvest (a tree trunk) is done growing.
+            row.State = row.Growth >= 0f && row.Growth < 1f ? PlantState.Growing : PlantState.Idle;
         }
 
         var icon = Def.GetUISprite(go);

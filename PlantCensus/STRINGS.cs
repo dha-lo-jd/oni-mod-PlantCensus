@@ -25,6 +25,12 @@ public static class STRINGS
             public static LocString IDLE = "No growth";
         }
 
+        public static class TOOLTIPS
+        {
+            public static LocString EXPAND = "Show the branches";
+            public static LocString COLLAPSE = "Hide the branches";
+        }
+
         public static class ORIGINS
         {
             public static LocString WILD = "Wild";
@@ -56,6 +62,15 @@ public static class STRINGS
 
             // {0}: a cycles value
             public static LocString LEFT = "({0} left)";
+
+            // Second line of a tree's name. {0}: number of branches, {1}: how many of them can be harvested
+            public static LocString BRANCHES = "{0} branches ({1} ready)";
+
+            // Growth of a tree: the average of its branches. {0}: a percentage
+            public static LocString AVERAGE = "avg {0}";
+
+            // Yield of a tree. {0}: amount of one branch, {1}: number of branches
+            public static LocString PER_BRANCH = "{0} x{1}";
         }
     }
 }

@@ -54,6 +54,19 @@ public sealed class PlantRow
     // What keeps the plant from growing, one entry per cause; empty when nothing does.
     public string[] Problems = new string[0];
 
+    // Branches of a tree, listed under their trunk. Empty for every other plant.
+    public readonly System.Collections.Generic.List<PlantRow> Children = new System.Collections.Generic.List<PlantRow>();
+
+    // This row is a branch shown under its trunk.
+    public bool IsBranch;
+
+    // Trunk only: how many of its branches can be harvested.
+    public int ReadyBranches;
+
+    // Trunk only: Growth is the average of the branches, and the crop is one branch's (CropCount of them yield it).
+    public bool GrowthIsAverage;
+    public int CropCount;
+
     public Sprite Icon;
     public Color IconColor = Color.white;
 
