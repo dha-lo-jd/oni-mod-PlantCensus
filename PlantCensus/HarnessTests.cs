@@ -15,6 +15,7 @@ internal static class HarnessTests
 {
     private const string Mealwood = "BasicSingleHarvestPlant";
     private const string MealwoodSeed = "BasicSingleHarvestPlantSeed";
+    private const string ArborTree = "ForestTree";
 
     [HarnessTest(Name = "plantcensus.mod_loaded", Tags = "plantcensus", RequiresGame = false)]
     public static void ModLoaded()
@@ -51,6 +52,23 @@ internal static class HarnessTests
         var names = ToolMenu.Instance.basicTools.Where(c => c.tools.Count > 0).Select(c => c.tools[0].toolName).ToList();
         Check.Equal(1, names.Count(n => n == CensusTool.ToolName), "census buttons in the tool menu");
         Check.Equal(names.IndexOf("HarvestTool") + 1, names.IndexOf(CensusTool.ToolName), "position of the census button");
+    }
+
+    // The button shows the mod's own icon when ModAssets/tool_icon.png is there, else the borrowed vanilla one.
+    [HarnessTest(Name = "plantcensus.tool_icon", Tags = "plantcensus")]
+    public static void ToolIconUsed()
+    {
+        var file = System.IO.Path.Combine(PlantCensusMod.modPath, "ModAssets", ToolIcon.FileName);
+        var expected = System.IO.File.Exists(file) ? ToolIcon.SpriteName : ToolIcon.Fallback;
+        Check.Equal(expected, ToolIcon.Resolve(), "icon name for the tool button");
+        Check.NotNull(Assets.GetSprite(expected), "the game has no sprite named " + expected);
+
+        var collection = ToolMenu.Instance.basicTools.First(c => c.tools.Count > 0 && c.tools[0].toolName == CensusTool.ToolName);
+        Check.Equal(expected, collection.icon, "icon of the census button");
+        var image = collection.tools[0].toggle != null ? collection.tools[0].toggle.transform.Find("FG") : null;
+        Check.NotNull(image, "the census button has no icon image");
+        Check.True(image.GetComponent<UnityEngine.UI.Image>().sprite == Assets.GetSprite(expected), "the census button shows another sprite");
+        Check.NoLogErrors();
     }
 
     // A wild plant inside the area is listed with its species, growth and crop; one outside is not.
@@ -151,6 +169,122 @@ internal static class HarnessTests
         }
     }
 
+    // A tree is one row with its branches under it, whichever part of it is in the area; the window shows the
+    // branches only while the tree is expanded, and the state filter applies to them too.
+    [HarnessTest(Name = "plantcensus.tree_branches_grouped", Tags = "plantcensus", TimeoutSeconds = 180)]
+    public static IEnumerator TreeBranchesGrouped()
+    {
+        var scene = new Scene();
+        try
+        {
+            var tree = scene.WildPlant(ArborTree);
+            yield return null;
+            yield return null;
+            var grower = tree.GetSMI<PlantBranchGrower.Instance>();
+            Check.NotNull(grower, "the Arbor Tree has no branch grower");
+            for (var i = 0; i < 3; i++)
+            {
+                grower.SpawnRandomBranch(0.5f);
+            }
+
+            yield return null;
+            yield return null;
+            var branches = grower.GetExistingBranches();
+            foreach (var branch in branches)
+            {
+                scene.Track(branch);
+            }
+
+            Check.True(branches.Length >= 2, "the tree grew " + branches.Length + " branches");
+
+            var trunkCell = Grid.PosToCell(tree);
+            var rows = PlantCollector.Collect(CensusSelection.FromRect(trunkCell, trunkCell));
+            Check.Equal(1, rows.Count, "rows for the trunk's cell");
+            Check.Equal(branches.Length, rows[0].Children.Count, "branches under the trunk");
+            Check.False(rows[0].IsBranch, "the trunk is marked as a branch");
+            Check.True(rows[0].Children.All(c => c.IsBranch && c.SpeciesKey == ArborTree), "branches are not filed under the tree's species");
+            Check.True(rows[0].Children.All(c => c.Children.Count == 0), "a branch has branches");
+
+            var branchCell = Grid.PosToCell(branches[0]);
+            Check.True(branchCell != trunkCell, "the branch stands in the trunk's cell");
+            var byBranch = PlantCollector.Collect(CensusSelection.FromRect(branchCell, branchCell));
+            Check.Equal(1, byBranch.Count, "rows for a branch's cell");
+            Check.True(byBranch[0].Target == tree.GetComponent<KSelectable>(), "a branch's cell does not list its tree");
+            Check.Equal(branches.Length, byBranch[0].Children.Count, "branches under the trunk, selected through a branch");
+
+            var both = CensusSelection.FromRect(trunkCell, trunkCell);
+            both.Cells.Add(branchCell);
+            Check.Equal(1, PlantCollector.Collect(both).Count, "rows for the trunk's and a branch's cell together");
+
+            CensusScreen.Open(CensusSelection.FromRect(trunkCell, trunkCell));
+            yield return null;
+            var screen = CensusScreen.Current;
+            Check.NotNull(screen, "the census window did not open");
+            Check.Equal(1, screen.TotalRows, "total rows");
+            Check.Equal(1, screen.ShownRows, "shown rows");
+            Check.Equal(0, screen.ShownBranches, "branches shown before expanding");
+
+            var row = screen.Row(0);
+            screen.ToggleExpanded(row);
+            Check.Equal(branches.Length, screen.ShownBranches, "branches shown after expanding");
+
+            var state = row.Children[0].State;
+            var others = row.Children.Count(c => c.State != state);
+            screen.ToggleState(state);
+            Check.Equal(screen.ShownRows == 0 ? 0 : others, screen.ShownBranches, "branches shown with one state switched off");
+            screen.ToggleState(state);
+            Check.Equal(branches.Length, screen.ShownBranches, "branches shown with the state back on");
+
+            screen.ToggleExpanded(row);
+            Check.Equal(0, screen.ShownBranches, "branches shown after collapsing");
+            yield return null;
+            Check.NoLogErrors();
+        }
+        finally
+        {
+            if (CensusScreen.Current != null)
+            {
+                CensusScreen.Current.Close();
+            }
+
+            scene.Dispose();
+        }
+    }
+
+    // The trunk's row sums up the tree: ready if any branch is, the branches' average growth, their crop and problems.
+    [HarnessTest(Name = "plantcensus.tree_summary", Tags = "plantcensus", RequiresGame = false)]
+    public static void TreeSummary()
+    {
+        var trunk = new PlantRow { Name = "T", State = PlantState.Idle, Growth = 1f, Problems = new[] { "own" } };
+        trunk.Children.Add(new PlantRow { State = PlantState.Ready, Growth = 1f, CropName = "Wood", CropAmount = "300 kg", HasHarvestSetting = true, AutoHarvest = true });
+        trunk.Children.Add(new PlantRow { State = PlantState.Growing, Growth = 0.5f, CropName = "Wood", CropAmount = "300 kg" });
+        trunk.Children.Add(new PlantRow { State = PlantState.Stalled, Growth = 0.3f, Problems = new[] { "cold", "own" } });
+        PlantCollector.Summarize(trunk);
+
+        Check.Equal(PlantState.Ready, trunk.State, "state");
+        Check.Equal(1, trunk.ReadyBranches, "ready branches");
+        Check.True(trunk.GrowthIsAverage, "growth is not marked as an average");
+        Check.Near(0.6, trunk.Growth, 0.001, "average growth");
+        Check.Equal("Wood", trunk.CropName, "crop name");
+        Check.Equal("300 kg", trunk.CropAmount, "crop amount");
+        Check.Equal(2, trunk.CropCount, "branches with a crop");
+        Check.True(trunk.HasHarvestSetting && trunk.AutoHarvest, "harvest setting was not taken from the branches");
+        Check.Equal("own|cold", string.Join("|", trunk.Problems), "problems");
+
+        // The tree passes a state filter through a branch, too.
+        var rows = new List<PlantRow> { trunk };
+        Check.Equal(1, CensusScreen.Filter(rows, new HashSet<PlantState> { PlantState.Stalled }, new HashSet<string>()).Count, "filter by a branch's state");
+        Check.Equal(0, CensusScreen.Filter(rows, new HashSet<PlantState> { PlantState.Idle }, new HashSet<string>()).Count, "filter by a state nothing has");
+
+        // A trunk that is still growing keeps its own growth.
+        var young = new PlantRow { State = PlantState.Growing, Growth = 0.4f };
+        young.Children.Add(new PlantRow { State = PlantState.Growing, Growth = 0.9f });
+        PlantCollector.Summarize(young);
+        Check.False(young.GrowthIsAverage, "a growing trunk shows the branches' average");
+        Check.Near(0.4, young.Growth, 0.001, "growth of a growing trunk");
+        Check.Equal(PlantState.Growing, young.State, "state of a growing trunk");
+    }
+
     // The window opens on the area, the filters narrow the list, and it closes cleanly.
     [HarnessTest(Name = "plantcensus.screen_filters", Tags = "plantcensus")]
     public static IEnumerator ScreenFilters()
@@ -249,6 +383,33 @@ internal static class HarnessTests
 
     private static string Names(IEnumerable<PlantRow> rows) => string.Concat(rows.Select(r => r.Name));
 
+    // Writes the picture the game shows for a prefab in its own lists (the "ui" pose) to a PNG file. Used once to get
+    // real silhouettes for icons. The source texture is not readable, so it goes through a render texture.
+    public static string ExportUiSprite(string prefabId, string path)
+    {
+        var prefab = Assets.GetPrefab(prefabId);
+        if (prefab == null)
+        {
+            return "no prefab " + prefabId;
+        }
+
+        var sprite = Def.GetUISprite(prefab).first;
+        var texture = sprite.texture;
+        var target = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32);
+        var previous = RenderTexture.active;
+        Graphics.Blit(texture, target);
+        RenderTexture.active = target;
+        var copy = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+        copy.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+        copy.Apply();
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(target);
+        System.IO.File.WriteAllBytes(path, copy.EncodeToPNG());
+        Object.Destroy(copy);
+        var rect = sprite.textureRect;
+        return texture.width + "x" + texture.height + " rect x=" + rect.x + " y=" + rect.y + " w=" + rect.width + " h=" + rect.height;
+    }
+
     // Scene for looking at the window by hand or in a screenshot. Call through the harness, with game time in between:
     //   /invoke PlantCensus.HarnessTests.DemoBuild, /time/advance, /invoke PlantCensus.HarnessTests.DemoOpen, /screenshot
     private static readonly List<GameObject> demoPlants = new List<GameObject>();
@@ -258,7 +419,7 @@ internal static class HarnessTests
     {
         demoScene = new Scene();
         demoPlants.Clear();
-        foreach (var id in new[] { Mealwood, Mealwood, "PrickleFlower", "ColdWheat", "PrickleGrass", "SeaLettuce" })
+        foreach (var id in new[] { Mealwood, Mealwood, "PrickleFlower", "ColdWheat", "PrickleGrass", "SeaLettuce", ArborTree })
         {
             if (Assets.GetPrefab(id) != null)
             {
@@ -283,8 +444,42 @@ internal static class HarnessTests
             cells.Add(Grid.PosToCell(go));
         }
 
+        // Give the trees some branches, at different stages, and show them.
+        foreach (var go in demoPlants.Where(g => g != null))
+        {
+            var grower = go.GetSMI<PlantBranchGrower.Instance>();
+            if (grower == null || grower.GetExistingBranches().Length > 0)
+            {
+                continue;
+            }
+
+            foreach (var growth in new[] { 1f, 0.6f, 0.2f })
+            {
+                grower.SpawnRandomBranch(growth);
+            }
+
+            foreach (var branch in grower.GetExistingBranches())
+            {
+                demoScene.Track(branch);
+            }
+        }
+
         CensusScreen.Open(CensusSelection.FromCells(cells));
-        return CensusScreen.Current != null ? CensusScreen.Current.TotalRows : -1;
+        var screen = CensusScreen.Current;
+        if (screen == null)
+        {
+            return -1;
+        }
+
+        for (var i = 0; i < screen.TotalRows; i++)
+        {
+            if (screen.Row(i).Children.Count > 0)
+            {
+                screen.ToggleExpanded(screen.Row(i));
+            }
+        }
+
+        return screen.TotalRows;
     }
 
     // Builds what a test needs in a free spot near the start and removes it afterwards. The test save is an empty
@@ -313,6 +508,15 @@ internal static class HarnessTests
         }
 
         public GameObject Planter() => Place("PlanterBox", Grid.CellAbove(FreeSpot()));
+
+        // Something the test made by other means; removed with the rest (before what was made earlier).
+        public void Track(GameObject go)
+        {
+            if (go != null && !objects.Contains(go))
+            {
+                objects.Add(go);
+            }
+        }
 
         public void Dispose()
         {
