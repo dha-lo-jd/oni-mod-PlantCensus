@@ -1,6 +1,6 @@
 # PlantCensus
 
-Oxygen Not Included mod (work in progress). Lists the plants in an area with their growth and what keeps them from growing.
+Oxygen Not Included mod. Lists the plants in an area with their growth and what keeps them from growing.
 
 Part of the Census series (see [Critter Census](https://github.com/dha-lo-jd/oni-mod-CritterCensus)).
 

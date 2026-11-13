@@ -1,0 +1,29 @@
+[h1]Plant Census[/h1]
+
+Lists the plants in an area with their [b]growth[/b] and [b]what keeps them from growing[/b]. Drag over a farm, or click a Greenhouse in the Rooms overlay, and see every plant at a glance instead of clicking them one by one.
+
+It only shows information: nothing in the colony changes.
+
+[h2]Features[/h2]
+[list]
+[*] Adds a [b]Plant Census[/b] tool next to the Harvest tool. [b]Drag over an area[/b] to list the plants in it
+[*] In the [b]Rooms overlay[/b], clicking a [b]Greenhouse[/b] lists the plants of that room (other rooms are selected as usual)
+[*] Each row shows the plant's [b]state[/b] (ready to harvest / growing / stalled), [b]wild or farmed[/b], [b]growth[/b] with the cycles left, the [b]crop and amount[/b] of one harvest, the [b]auto-harvest[/b] setting, the [b]temperature[/b], and the [b]reasons it is not growing[/b] (the same wording the game shows in the plant's status)
+[*] A [b]tree is one row[/b]; its branches are listed under it and can be shown or hidden with the +/- button
+[*] [b]Filter[/b] by state and by species, [b]sort[/b] by any column
+[*] [b]Click a row[/b] to close the list and jump to that plant
+[*] Mutant plants are listed under their mutation name
+[*] Works with plants added by other mods
+[*] English and Japanese
+[/list]
+
+[h2]Notes[/h2]
+[list]
+[*] Safe to add to or remove from existing saves; nothing is written to the save file.
+[*] The list is a snapshot taken when the window opens; it does not update while open.
+[*] The tool has no hotkey.
+[*] Works together with [b]Critter Census[/b] (the same series, for critters).
+[/list]
+
+[h2]Source[/h2]
+[url=https://github.com/dha-lo-jd/oni-mod-PlantCensus]GitHub[/url] (MIT License)
