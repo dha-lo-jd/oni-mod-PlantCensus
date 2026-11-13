@@ -690,5 +690,18 @@ internal static class HarnessTests
             return true;
         }
     }
+
+    // The census button has no hotkey (Action.NumActions). Vanilla's ToolMenu.OnKeyDown used to throw an IndexOutOfRangeException
+    // for it on every key press (fixed by KButtonEventIsActionPatch, 2026-11-13). The press goes through the game's own input path.
+    [HarnessTest(Name = "plantcensus.key_press_does_not_throw", Tags = "plantcensus")]
+    public static IEnumerator KeyPressDoesNotThrow()
+    {
+        yield return Wait.Ticks(2);
+        Play.ClearTool();
+        Play.Press(KKeyCode.Escape);
+        Play.Press(Action.Dig); // a tool hotkey: ToolMenu compares every tool's hotkey, ours included
+        Play.ClearTool();
+        Play.Press(KKeyCode.Escape);
+    }
 }
 #endif
