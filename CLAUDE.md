@@ -9,7 +9,7 @@ ONI mod（Census シリーズ。兄弟は `../CritterCensus`）。Build: `dotnet
 - ツールボタンのアイコンは `Ui/ToolIcon.cs`。`ModAssets/tool_icon.png` を読み、`Assets.Sprites` に自分の名前で登録する。ファイルがなければバニラのアイコン名を返す。`CritterCensus` にも同じものがある。元画像は HQ の `_Incoming/PlantCensus/2026-11-13-icon-tool-3/`、加工は `tools/asset.py`。
 - 「問題」列は `WiltCondition.WiltCausesString()` の各行。ゲームが植物の状態欄に出す文言そのまま（行頭の記号とリンクのマークアップは取り除く）。
 - ゲームの文字列クラス `STRINGS` は、この Mod の `STRINGS` に隠れる。ゲーム側を使うときは `global::STRINGS`。
-- `CritterCensus` と同じ対象（`GameInputMapping.CompareActionKeyCodes`、`GameUtil.GetHotkeyString`、`SelectTool.OnLeftClickDown`）にパッチを当てている。両方を入れても動くように、どちらも自分の条件に合わないときは元の処理へ通す。両方を有効にしたハーネス実行（両方のタグ、17 件）は 2026-11-13 に合格済み。ただしツールのドラッグやクリックの実操作は見ていない。
+- `CritterCensus` と同じ対象（`GameInputMapping.CompareActionKeyCodes`、`GameUtil.GetHotkeyString`、`SelectTool.OnLeftClickDown`）にパッチを当てている。両方を入れても動くように、どちらも自分の条件に合わないときは元の処理へ通す。両方を有効にしたハーネス実行（`--project` を 2 つ、両方のタグ）は 2026-11-13 に合格済み。
 
 ## 実機検証
 ONI 実機で検証するには Gravitas.TestHarness を使う。テストは `[HarnessTest]` を付けた static メソッドとして書く（`PlantCensus/HarnessTests.cs`、`#if DEBUG`）。
@@ -18,7 +18,8 @@ ONI 実機で検証するには Gravitas.TestHarness を使う。テストは `[
 初回登録（`--setup`）は 2026-11-13 に済んでいる。別の環境に初めて置くときは、DLL 配置 → `probe.py run --project . --setup` → 通常の probe、の順にする。
 詳細は harness repo の `README.md` と `protocol.md`。
 
-テストが見ていないもの: 画面の見た目、ツールボタンからのドラッグ操作、部屋オーバーレイでの温室クリック、行クリックでの選択とカメラ移動、開閉ボタンのクリック、突然変異種の表示、専用アイコンの表示。
+テストは、ツールバーのボタンのクリック → ドラッグ → 行クリックでの選択、開閉ボタンのクリックまで、ハーネスの入力再現（`Play`）で実際の経路を通す。
+テストが見ていないもの: 画面の見た目、部屋オーバーレイでの温室クリック、行クリック後のカメラ移動、突然変異種の表示、専用アイコンの実寸での見え方。
 
 見た目を確かめるときは、デモ用の場面を作って撮る（`docs/census-demo.png` はこの手順で撮ったもの）:
 

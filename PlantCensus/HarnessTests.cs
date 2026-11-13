@@ -381,6 +381,110 @@ internal static class HarnessTests
         Check.Equal("BDC", Names(CensusScreen.Filter(rows, states, new HashSet<string>())), "state filter");
     }
 
+    // The player's way in, played with the harness's input: pick the tool on the toolbar, drag over the plant, click its row.
+    [HarnessTest(Name = "plantcensus.toolbar_drag_and_row_click", Tags = "plantcensus", TimeoutSeconds = 180)]
+    public static IEnumerator ToolbarDragAndRowClick()
+    {
+        var scene = new Scene();
+        try
+        {
+            var plant = scene.WildPlant();
+            yield return null;
+            yield return null;
+            var cell = Grid.PosToCell(plant);
+
+            Play.ClickToolButton(CensusTool.ToolName);
+            Check.True(Play.ActiveTool is CensusTool, "clicking the census button should activate the census tool, got " + Play.ActiveTool);
+            Check.True(CensusScreen.Current == null, "the window is open before the drag");
+
+            Play.Drag(cell, cell);
+            yield return null;
+            var screen = CensusScreen.Current;
+            Check.NotNull(screen, "dragging the census tool over the plant did not open the window");
+            Check.Equal(1, screen.TotalRows, "rows for the dragged cell");
+            Check.Equal(1, Play.FindUi("Row", screen).Count, "row buttons on screen");
+
+            Play.ClickUi("Row", screen);
+            yield return null;
+            Check.True(CensusScreen.Current == null, "picking a row should close the window");
+            Check.True(Play.ActiveTool is SelectTool, "picking a row should hand over to the select tool, got " + Play.ActiveTool);
+            Check.True(SelectTool.Instance.selected == plant.GetComponent<KSelectable>(), "the clicked plant should be selected");
+            Check.NoLogErrors();
+        }
+        finally
+        {
+            if (CensusScreen.Current != null)
+            {
+                CensusScreen.Current.Close();
+            }
+
+            SelectTool.Instance.Select(null);
+            Play.ClearTool();
+            scene.Dispose();
+        }
+    }
+
+    // The button in front of a tree's name shows and hides its branches without selecting the tree.
+    [HarnessTest(Name = "plantcensus.expander_click", Tags = "plantcensus", TimeoutSeconds = 180)]
+    public static IEnumerator ExpanderClick()
+    {
+        var scene = new Scene();
+        try
+        {
+            var tree = scene.WildPlant(ArborTree);
+            yield return null;
+            yield return null;
+            var grower = tree.GetSMI<PlantBranchGrower.Instance>();
+            Check.NotNull(grower, "the Arbor Tree has no branch grower");
+            for (var i = 0; i < 3; i++)
+            {
+                grower.SpawnRandomBranch(0.5f);
+            }
+
+            yield return null;
+            yield return null;
+            var branches = grower.GetExistingBranches();
+            foreach (var branch in branches)
+            {
+                scene.Track(branch);
+            }
+
+            Check.True(branches.Length >= 2, "the tree grew " + branches.Length + " branches");
+
+            var cell = Grid.PosToCell(tree);
+            Play.ClickToolButton(CensusTool.ToolName);
+            Play.Drag(cell, cell);
+            yield return null;
+            var screen = CensusScreen.Current;
+            Check.NotNull(screen, "the census window did not open");
+            Check.Equal(0, screen.ShownBranches, "branches shown before the click");
+            Check.Equal(1, Play.FindUi("Row", screen).Count, "row buttons before expanding");
+
+            Play.ClickUi("Expander", screen);
+            yield return null;
+            Check.True(CensusScreen.Current == screen, "the window must stay open when a tree is expanded");
+            Check.Equal(branches.Length, screen.ShownBranches, "branches shown after clicking the expander");
+            Check.Equal(1 + branches.Length, Play.FindUi("Row", screen).Count, "row buttons after expanding");
+
+            Play.ClickUi("Expander", screen);
+            yield return null;
+            Check.Equal(0, screen.ShownBranches, "branches shown after clicking the expander again");
+            Check.Equal(1, Play.FindUi("Row", screen).Count, "row buttons after collapsing");
+            Check.True(SelectTool.Instance.selected == null || SelectTool.Instance.selected.gameObject != tree, "the tree must not be selected by the expander");
+            Check.NoLogErrors();
+        }
+        finally
+        {
+            if (CensusScreen.Current != null)
+            {
+                CensusScreen.Current.Close();
+            }
+
+            Play.ClearTool();
+            scene.Dispose();
+        }
+    }
+
     private static string Names(IEnumerable<PlantRow> rows) => string.Concat(rows.Select(r => r.Name));
 
     // Writes the picture the game shows for a prefab in its own lists (the "ui" pose) to a PNG file. Used once to get

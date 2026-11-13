@@ -642,6 +642,7 @@ public sealed class CensusScreen : KModalScreen
     private void AddRow(PlantRow row)
     {
         var button = UiFactory.CreateButton(content, "", 0f, 0f, 0f, RowHeight, () => Pick(row));
+        button.name = "Row";
         button.gameObject.AddComponent<LayoutElement>().minHeight = RowHeight;
         if (row.IsBranch)
         {
