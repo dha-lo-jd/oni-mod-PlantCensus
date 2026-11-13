@@ -13,7 +13,7 @@ ONI mod（Census シリーズ。兄弟は `../CritterCensus`）。Build: `dotnet
 
 ## 実機検証
 ONI 実機で検証するには Gravitas.TestHarness を使う。テストは `[HarnessTest]` を付けた static メソッドとして書く（`PlantCensus/HarnessTests.cs`、`#if DEBUG`）。
-実行: `python C:/Users/dha_1/RiderProjects/GravitasTestHarness/Gravitas.TestProbe/probe.py run --project . --tests '{"tags":["plantcensus"]}'`
+実行: `python C:/Users/dha_1/ONI-Modding/GravitasTestHarness/Gravitas.TestProbe/probe.py run --project . --tests '{"tags":["plantcensus"]}'`
 ゲームを起動し本番の mods.json を書き換えるので、実行前にユーザーに確認する。
 初回登録（`--setup`）は 2026-11-13 に済んでいる。別の環境に初めて置くときは、DLL 配置 → `probe.py run --project . --setup` → 通常の probe、の順にする。
 詳細は harness repo の `README.md` と `protocol.md`。
@@ -23,5 +23,5 @@ ONI 実機で検証するには Gravitas.TestHarness を使う。テストは `[
 見た目を確かめるときは、デモ用の場面を作って撮る（`docs/census-demo.png` はこの手順で撮ったもの）:
 
 ```
-python C:/Users/dha_1/RiderProjects/GravitasTestHarness/Gravitas.TestProbe/probe.py run --project . --steps '[["POST","/invoke",{"method":"PlantCensus.HarnessTests.DemoBuild"}],["POST","/time/advance",{"seconds":8}],["POST","/invoke",{"method":"PlantCensus.HarnessTests.DemoOpen"}],["POST","/screenshot",{"name":"census"}]]'
+python C:/Users/dha_1/ONI-Modding/GravitasTestHarness/Gravitas.TestProbe/probe.py run --project . --steps '[["POST","/invoke",{"method":"PlantCensus.HarnessTests.DemoBuild"}],["POST","/time/advance",{"seconds":8}],["POST","/invoke",{"method":"PlantCensus.HarnessTests.DemoOpen"}],["POST","/screenshot",{"name":"census"}]]'
 ```
