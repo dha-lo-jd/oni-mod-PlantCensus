@@ -63,13 +63,14 @@ public static class ToolMenuCreateBasicToolsPatch
 }
 
 // ToolMenu.OnKeyDown calls e.IsAction(tool.hotkey) without checking for the unbound NumActions, and the key event's
-// flag array is shorter than NumActions, so any key press threw IndexOutOfRangeException. An unbound action is never pressed.
+// flag array has exactly NumActions entries, so any key press threw IndexOutOfRangeException. An unbound action is never pressed.
+// Only NumActions itself is unbound: PLib mods register actions above it (NumActions + id) and extend the array, so those must pass.
 [HarmonyPatch(typeof(KButtonEvent), nameof(KButtonEvent.IsAction))]
 public static class KButtonEventIsActionPatch
 {
     public static bool Prefix(Action action, ref bool __result)
     {
-        if (action >= Action.NumActions)
+        if (action == Action.NumActions)
         {
             __result = false;
             return false;

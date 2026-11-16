@@ -1,0 +1,21 @@
+[h1]Changelog / 更新履歴[/h1]
+
+[h2]1.0.1[/h2]
+[b]English[/b]
+[list]
+[*] Fixed hotkeys of other mods that use PLib stopping to work while this mod was enabled.
+[/list]
+[b]日本語[/b]
+[list]
+[*] この Modを有効にしていると、PLib を使う他の Mod のホットキーが効かなくなる問題を修正しました。
+[/list]
+
+[h2]1.0.0[/h2]
+[b]English[/b]
+[list]
+[*] First release: the plant census tool and its full-screen list.
+[/list]
+[b]日本語[/b]
+[list]
+[*] 初回公開: 植物の調査ツールと全画面の一覧。
+[/list]

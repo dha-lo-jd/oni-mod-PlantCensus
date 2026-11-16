@@ -691,6 +691,19 @@ internal static class HarnessTests
         }
     }
 
+    // Actions above NumActions come from other mods (PLib registers NumActions + id and extends the flag array). The IsAction
+    // patch must leave them alone; only the unbound NumActions itself is "never pressed".
+    [HarnessTest(Name = "plantcensus.is_action_passes_extended_actions", Tags = "plantcensus", RequiresGame = false)]
+    public static void IsActionPassesExtendedActions()
+    {
+        var flags = new bool[(int)Action.NumActions + 5];
+        flags[(int)Action.NumActions + 3] = true;
+        var e = new KButtonEvent(null, InputEventType.KeyDown, flags);
+        Check.Equal(true, e.IsAction((Action)((int)Action.NumActions + 3)), "an extended action that is set");
+        Check.Equal(false, e.IsAction((Action)((int)Action.NumActions + 2)), "an extended action that is not set");
+        Check.Equal(false, e.IsAction(Action.NumActions), "the unbound action is never pressed");
+    }
+
     // The census button has no hotkey (Action.NumActions). Vanilla's ToolMenu.OnKeyDown used to throw an IndexOutOfRangeException
     // for it on every key press (fixed by KButtonEventIsActionPatch, 2026-11-13). The press goes through the game's own input path.
     [HarnessTest(Name = "plantcensus.key_press_does_not_throw", Tags = "plantcensus")]
