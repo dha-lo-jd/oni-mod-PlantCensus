@@ -1,5 +1,15 @@
 [h1]Changelog / 更新履歴[/h1]
 
+[h2]1.0.2[/h2]
+[b]English[/b]
+[list]
+[*] Updated for the U60 release: the harvest column now reads the new crop data, and lists every item for plants that yield several.
+[/list]
+[b]日本語[/b]
+[list]
+[*] U60 に対応しました。収穫の列が新しい作物データを読むようになり、複数の品を収穫する植物はすべて表示します。
+[/list]
+
 [h2]1.0.1[/h2]
 [b]English[/b]
 [list]
