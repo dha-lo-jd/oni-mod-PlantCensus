@@ -269,38 +269,59 @@ public static class PlantCollector
         }
     }
 
-    // The harvested item and one harvest's amount, formatted the way the game's planter side screen does.
+    // The harvested items and one harvest's amount of each, formatted the way the game's planter side screen does.
+    // (Since U60 a plant can yield several items; the names and the amounts are listed in the same order.)
     private static void SetCrop(PlantRow row, GameObject go)
     {
         var crop = go.GetComponent<Crop>();
-        if (crop == null || string.IsNullOrEmpty(crop.cropId))
+        if (crop == null || crop.cropVal == null || crop.cropVal.products == null)
         {
             return;
         }
 
-        var tag = new Tag(crop.cropId);
-        var prefab = Assets.GetPrefab(tag);
-        if (prefab == null)
+        var factor = Db.Get().PlantAttributes.YieldFactor.Lookup(go);
+        var multiplier = factor != null ? factor.GetTotalValue() : 1f;
+        var names = new List<string>();
+        var amounts = new List<string>();
+        foreach (var product in crop.cropVal.products)
         {
-            return;
+            if (string.IsNullOrEmpty(product.cropId))
+            {
+                continue;
+            }
+
+            var tag = new Tag(product.cropId);
+            var prefab = Assets.GetPrefab(tag);
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            names.Add(Texts.StripLinks(prefab.GetProperName()));
+            amounts.Add(FormatAmount(prefab, tag, product.quantity * multiplier));
         }
 
-        var yield = Db.Get().PlantAttributes.YieldAmount.Lookup(go);
-        var amount = yield != null ? yield.GetTotalValue() : crop.cropVal.numProduced;
+        if (names.Count > 0)
+        {
+            row.CropName = string.Join(" / ", names);
+            row.CropAmount = string.Join(" / ", amounts);
+        }
+    }
+
+    private static string FormatAmount(GameObject prefab, Tag tag, float amount)
+    {
         var edible = prefab.GetComponent<Edible>();
-        row.CropName = Texts.StripLinks(prefab.GetProperName());
         if (edible != null)
         {
-            row.CropAmount = GameUtil.GetFormattedCalories(edible.FoodInfo.CaloriesPerUnit * amount);
+            return GameUtil.GetFormattedCalories(edible.FoodInfo.CaloriesPerUnit * amount);
         }
-        else if (GameTags.DisplayAsUnits.Contains(tag))
+
+        if (GameTags.DisplayAsUnits.Contains(tag))
         {
-            row.CropAmount = GameUtil.GetFormattedUnits(amount, GameUtil.TimeSlice.None, displaySuffix: false);
+            return GameUtil.GetFormattedUnits(amount, GameUtil.TimeSlice.None, displaySuffix: false);
         }
-        else
-        {
-            row.CropAmount = GameUtil.GetFormattedMass(amount);
-        }
+
+        return GameUtil.GetFormattedMass(amount);
     }
 
     private static void SetTemperature(PlantRow row, GameObject go)
