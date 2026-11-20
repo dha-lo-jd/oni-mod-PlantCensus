@@ -3,11 +3,11 @@
 [h2]1.1.0[/h2]
 [b]English[/b]
 [list]
-[*] Updated for the U60 release (requires U60 or later of the game): the harvest column now reads the new crop data, and lists every item for plants that yield several.
+[*] Updated for the U60 release while still working on U59. On U60 the harvest column reads the new crop data and lists every item for plants that yield several.
 [/list]
 [b]日本語[/b]
 [list]
-[*] U60 に対応しました（ゲームの U60 以降が必要です）。収穫の列が新しい作物データを読むようになり、複数の品を収穫する植物はすべて表示します。
+[*] U60 に対応しました（U59 でも引き続き動きます）。U60 では、収穫の列が新しい作物データを読むようになり、複数の品を収穫する植物はすべて表示します。
 [/list]
 
 [h2]1.0.1[/h2]

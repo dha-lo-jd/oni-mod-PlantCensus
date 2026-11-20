@@ -15,7 +15,7 @@ Part of the Census series (see [Critter Census](https://github.com/dha-lo-jd/oni
 
 It only shows information: nothing in the colony changes. The list is a snapshot taken when the window opens.
 
-Requires U60 or later of the game. English and Japanese are supported. The design is described in [SPEC.md](SPEC.md) (Japanese).
+Works with the game's U59 and U60 builds. English and Japanese are supported. The design is described in [SPEC.md](SPEC.md) (Japanese).
 
 ## Build
 
